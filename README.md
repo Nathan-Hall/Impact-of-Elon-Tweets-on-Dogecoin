@@ -15,6 +15,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## Explanation
 - Retrieves one-minute data from exchange api's within a window of time around Elon Musks's tweets about Dogecoin. 
 - Calculates abnormal return, cumulative abnormal return, average abnormal return and cumulative average abnormal reuturn of the data. Also runs a Wilcoxon signed rank test on each minute since the tweet.
+- Outputs an excel that holds all data and calculation results.
 - Data is taken from Binance API, unless there is missing data due to server maintenance, in which case it is taken from FTX.
 - All inputs are changeable in config.json.
 - Before running you have to install all packages, which you can do with:
