@@ -1,4 +1,4 @@
-#Impact-of-Elon-Tweets-on-Dogecoin
+# Impact-of-Elon-Tweets-on-Dogecoin
 
 This was a project made by Nathan Hall for ECMT3150 at USYD.
 
@@ -18,8 +18,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - Data is taken from Binance API, unless there is missing data due to server maintenance, in which case it is taken from FTX.
 - All inputs are changeable in config.json.
 - Before running you have to install all packages, which you can do with:
-'''python
+```python
 $ pip install -r requirements.txt
-'''
+```
 
 P.S: I am in my final year, so please check out my LinkedIn and hire me :)
