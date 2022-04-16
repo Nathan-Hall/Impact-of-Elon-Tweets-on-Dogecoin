@@ -1,0 +1,24 @@
+{
+    "data": {
+        "filename": "Elon Crypto Tweets.csv"
+    },
+    "specs": {
+        "window": 480,
+        "event_start": -20,
+        "event_end": 240,
+        "car_freq":30
+    },
+    "specs_bin": {
+        "symbol": "DOGEUSDT",
+        "interval": "1m"
+    },
+    "specs_ftx": {
+        "symbol": "DOGE_USDT",
+        "interval": "60"
+    },
+    "output": {
+        "filename":"Elon_Tweet_Data.xlsx"
+    }
+}
+    
+
