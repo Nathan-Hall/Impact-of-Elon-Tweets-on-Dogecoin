@@ -19,12 +19,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - Runs multiple cross-section regression on every minute CAR from the tweet to 60 minutes after with the model:
 
 ```markdown
-- CAR = Tweet_Count + Market_Cap + Market_Cap*Tweet_Count + Link + Video + Picture + Recognisability + Month + Past_Hout_Ret + Past_Hour_Vol
+CAR = Tweet_Count + Market_Cap + Market_Cap*Tweet_Count + Link + Video + Picture + Recognisability + Month + Past_Hout_Ret + Past_Hour_Vol
 ```
 - Plots all coefficients and pvalues using Matplotlib over time, so it's possible to view changing marginal impact as a function of time (see Graphs).
 - Also runs multiple ts regression to check for changes in autocorrelation structure after an event:
 ```markdown
-- Return = Event_Dummy + Return_1 + Event_Dummy*Return1
+Return = Event_Dummy + Return_1 + Event_Dummy*Return1
 ```
 - Outputs an excel file that holds all data and calculation results.
 - All inputs are changeable in config.json.
