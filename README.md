@@ -35,4 +35,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 $ pip install -r requirements.txt
 ```
 
-P.S: I am in my final year, so please check out my LinkedIn and hire me :)
+P.S: I am self-taught coder so code probs not the best
