@@ -14,6 +14,8 @@ ggplot(data, aes(Tweet_Count, CAR_60)) +
   geom_point() +
   stat_smooth(method = lm)
 
+plot(data$CAR_60)
+
 interaction = data$Tweet_Count*log(data$Market_Cap)
 
 ggplot(data, aes(Months, CAR_5)) +
@@ -25,22 +27,22 @@ ggplot(data, aes(log(hour_vol), CAR_15)) +
   stat_smooth(method = lm)
 
 
-model1 <- lm(CAR_1 ~ Tweet_Count + Market_Cap + Months + Tweet_Count*Market_Cap + CAR_1_1 + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
+model1 <- lm(CAR_1 ~ Tweet_Count + Market_Cap + Months + Tweet_Count*Market_Cap + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
 summary(model1)
 durbinWatsonTest(model1)
 bptest(model1)
 
-model2 <- lm(CAR_2 ~ Tweet_Count + Market_Cap + Months + interaction + CAR_2_1 + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
+model2 <- lm(CAR_2 ~ Tweet_Count + Market_Cap + Months + Tweet_Count*Market_Cap + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
 summary(model2)
 
 durbinWatsonTest(model2)
 bptest(model2)
 
-model5 <- lm(CAR_5 ~ Tweet_Count + Market_Cap + Months + Tweet_Count*Market_Cap + CAR_5_1 + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
+model5 <- lm(CAR_5 ~ Tweet_Count + Market_Cap + Months + Tweet_Count*Market_Cap + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
 summary(model5)
 bptest(model5)
 
-model10 <- lm(CAR_10 ~ Tweet_Count + Market_Cap + Market_Cap*Tweet_Count + Months + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
+model10 <- lm(CAR_10 ~ Tweet_Count + Market_Cap + Months + Market_Cap*Tweet_Count + Months + Picture + Video + Link + Recognisability + hour_ret + hour_vol, data=data)
 summary(model10)
 bptest(model10)
 
