@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from plotly.offline import plot
 import statsmodels.api as sm
-
+import matplotlib.patches as mpatches
 
 def minutes_unix(minutes):
     unix = minutes*60*1000
@@ -124,7 +124,7 @@ def calc_abnormal_ret(df, tweet_df, window, event_count, specs, recog, tweet_fil
     #car_freq = specs['car_freq']
     #car_list = [1,2,5,10,15]
     # car_list.extend([j*car_freq for j in range(1,6)])
-    car_list = [j for j in range(1,60)]
+    car_list = [j for j in range(0,61)]
     df_ar = pd.DataFrame()
     
     
@@ -147,7 +147,7 @@ def calc_abnormal_ret(df, tweet_df, window, event_count, specs, recog, tweet_fil
         
         df['mean'].iloc[window_start:window_end] = df[window_start:exp_ret_window].Return.mean()
         df['AR'] = df['Return'] - df['mean']
-        df['CAR'].iloc[window_start:window_end] = df[window_start:window_end].AR.cumsum()
+        df['CAR'].iloc[tweet_start:window_end] = df[tweet_start:window_end].AR.cumsum()
         df['sd'].iloc[window_start:window_end] = math.sqrt((np.square(df[window_start:exp_ret_window].AR).sum(axis=0))/(window*2))
         df['AR_tstat'] = df['AR']/df['sd']
         
@@ -170,7 +170,7 @@ def calc_abnormal_ret(df, tweet_df, window, event_count, specs, recog, tweet_fil
    
     #Add CAR to tweet_df
     for i, val in enumerate(car_list):
-        col_name = 'CAR_' + str(val)
+        col_name = 'CAR_' + str(val) 
         tweet_df[col_name] = cum_ar2[i]
         
     #AAR
@@ -200,6 +200,7 @@ def calc_abnormal_ret(df, tweet_df, window, event_count, specs, recog, tweet_fil
     #Add recognisability
     if tweet_filename == "Elon Crypto Tweets.csv":
         tweet_df['Recognisability'] = recog
+        
     
     return df, df_ar, caar_df, wilcoxon_res, tweet_df
 
@@ -213,7 +214,10 @@ def get_mcap(tweet_df, specs_cg):
         first = i
         second = i + 86400
         url='https://api.coingecko.com/api/v3/coins/%s/market_chart/range?vs_currency=%s&from=%s&to=%s&interval=daily' % (symbol_cg, currency, first, second)
-        mcap.append(requests.get(url).json()['market_caps'][0][1])
+        try: 
+            mcap.append(requests.get(url).json()['market_caps'][0][1])
+        except:
+            mcap.append(np.nan)
         
     tweet_df['Market_Cap'] = mcap
     print('Market cap data retrieved')
@@ -228,7 +232,7 @@ def excel_create(filename_out, df, df_ar, caar_df, wilcoxon_res, tweet_df):
     
     #Datetime cannot be tz aware in excel
     tweet_df['Datetime'] = tweet_df['Datetime'].dt.tz_localize(None)
-    tweet_df.index.name = 'Tweet_Count'
+    tweet_df.index.name = 'index'
     
     tweet_df.to_excel(writer,sheet_name='Elon Tweets and CAR')
     caar_df.to_excel(writer,sheet_name='CAAR')
@@ -240,18 +244,20 @@ def excel_create(filename_out, df, df_ar, caar_df, wilcoxon_res, tweet_df):
     writer.save()
 
 
-def regression(tweet_df, months):
+def regression(tweet_df, months, df, window):
     tweet_df = tweet_df.rename_axis('Tweet_Count').reset_index()
     tweet_df.replace(('yes', 'no'), (1, 0), inplace=True)
     tweet_df['Months'] = months
+    tweet_df['Tweet_Count'] = tweet_df['Tweet_Count']+1
     tweet_df['Interaction'] = tweet_df['Market_Cap']*tweet_df['Tweet_Count']
-    
+    tweet_df['ReturnxCount'] = tweet_df['hour_ret']*tweet_df['Tweet_Count']
     CAR_list = tweet_df.filter(like='CAR').columns
+    CAR_list = CAR_list[CAR_list.str.contains('-')==False]
 
     params, pvalues = [],[]
     for val in CAR_list:
         X = tweet_df[['Market_Cap', 'Recognisability', 'hour_vol', 'hour_ret', 
-                      'Link','Picture','Video','Tweet_Count', 'Interaction', 'Months']]
+                      'Link','Picture','Video','Tweet_Count', 'Interaction', 'Months', 'ReturnxCount']]
         y = tweet_df[val]
         model = sm.OLS(y, X).fit()
         
@@ -267,38 +273,91 @@ def regression(tweet_df, months):
 
     for coef_name, p_name in zip(names,names_p):
         plot_coef(plot_df, coef_name, p_name)
-
+        
+    
+    ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
+    CAR_df = tweet_df[tweet_df.filter(like='CAR').columns]
+    CAR_plot_df = pd.DataFrame()
+    
+    roll = int(len(CAR_df)/5)
+    for i in range(roll):
+        CAR_plot_df[f"{ordinal(i)} group mean"] = CAR_df[i:i+roll].mean(axis=0)
+        
+    #
+    
+    CAR_plot_df.plot(legend=True, title='Mean CAR (Groups of 5 chronologically) of DOGE after Elon tweets',
+                     ylabel='Cumulative Abnormal Return',
+                     xlabel='Time (Minutes)'
+                     ).legend(bbox_to_anchor=(1,1))
+    CAR_plot_df = CAR_plot_df.reset_index()
+    
+    CAR_plot_2 = pd.DataFrame()
+    CAR_plot_2['Mean'] = CAR_df.mean(axis=0)
+    CAR_plot_2['Error'] = CAR_df.sem(axis=0)*2
+    CAR_plot_2['Names'] = CAR_df.columns
+    plt.gca().xaxis.set_major_locator(plt.MultipleLocator(30))
+    plt.plot(CAR_plot_2['Names'], CAR_plot_2['Mean'], 'k-')
+    plt.fill_between(CAR_plot_2['Names'], CAR_plot_2['Mean']-CAR_plot_2['Error'], 
+                     CAR_plot_2['Mean']+CAR_plot_2['Error'],
+                     color='lightgrey',
+                     label='Mean and 95% CI of CAR')
+    plt.xlabel('Time (Minutes)')
+    plt.ylabel('Return (%)')
+    plt.title('Mean and 95% CI of CAR')
+    plt.show()
+    
+    
+    temp_list = []
+    for i in range(len(df)//(window*2+1)):
+        total = window*2 + 1
+        start = i*total
+        end = (i*total) + total
+        temp_list.append(df.AR[start+340:end-300].to_list())
+    
+    ar_plot = pd.DataFrame(np.row_stack(temp_list)).T
+    ar_plot.mean(axis=1).plot(legend=False)
+    
+    ar_plot_2 = pd.DataFrame()
+    ar_plot_2['Mean'] = ar_plot.mean(axis=1)
+    ar_plot_2['Error'] = ar_plot.sem(axis=1)*2
+    ar_plot_2['correct'] = [i for i in range(-20,61)]
+    plt.plot(ar_plot_2.correct, ar_plot_2['Mean'], 'k-')
+    plt.fill_between(ar_plot_2.correct, ar_plot_2['Mean']-  ar_plot_2['Error'], 
+                     ar_plot_2['Mean']+ar_plot_2['Error'],
+                     color='lightgrey',
+                     label='Mean and 95% CI of AR')
+    plt.xlabel('Time (Minutes)')
+    plt.ylabel('Return (%)')
+    plt.title('Mean and 95% CI of AR')
+    plt.show()
+    
+    
+    return tweet_df
+  
 
 def autocor(df, event_count, specs, window):
-    event_start = specs['event_start']
-    total_time = window*2+1
+    total = window*2+1
     df['Lag'] = df['Return'].shift(1).fillna(method='bfill')
     df['dummy'] = 0
-    df2 = df
-    
+    df3 = df
+    df2 = pd.DataFrame()
     dummy_coef, int_coef, lag_coef, dummy_p, int_p, lag_p = [],[],[],[],[],[]
     
     for i in range(event_count):  
-        window_start = i*total_time
-        tweet_start = window_start + window
-        window_end = tweet_start + window
-        df['dummy'].iloc[tweet_start:window_end] = 1
-        df['Interaction'] = df['Lag'] * df['dummy']
-        df2 = df.iloc[tweet_start-180:tweet_start+20]
-        
-        X = df2[['Lag', 'Interaction', 'dummy']]
-        X = sm.add_constant(X)
-        y = df2['Return']
-        model = sm.OLS(y, X).fit()
-        model.summary()
-        
-        dummy_coef.append(model.params.dummy)
-        int_coef.append(model.params.Interaction)
-        lag_coef.append(model.params.Lag)
-        
-        dummy_p.append(model.pvalues.loc['dummy'])
-        int_p.append(model.pvalues.loc['Interaction'])
-        lag_p.append(model.pvalues.loc['Lag'])
+        start = i*total
+        tweet_start = start+window
+        window_end = tweet_start+60
+        df3['dummy'].iloc[tweet_start:window_end] = 1
+        df3['Tweet_Count'] = i+1
+        df3['Interaction'] = df3['Lag'] * df3['dummy']
+        df2 = df2.append(df3.iloc[tweet_start-120:tweet_start+60].reset_index(drop=True))
+    
+    df2.to_csv('Autocorrelation.csv')
+    X = df2[['Lag', 'Interaction', 'dummy']]
+    X = sm.add_constant(X)
+    y = df2['Return']
+    model2 = sm.OLS(y, X).fit()
+    model2.summary()
 
     plot_df2 = pd.DataFrame([dummy_coef, int_coef, lag_coef, dummy_p, int_p, lag_p]).T.reset_index(drop=True)
     plot_df2.columns = ['dummy_coef', 'int_coef', 'lag_coef', 'dummy_p', 'int_p', 'lag_p']
@@ -318,6 +377,7 @@ def plot_coef(plot_df, coef_name, p_name):
     
     fig.savefig(f"Graphs/{coef_name}.png")
 
+
 def main():
     configs = json.load(open('config.json', 'r'))
     tweet_filename = configs['data']['filename']
@@ -335,11 +395,13 @@ def main():
     df, df_ar, caar_df, wilcoxon_res, tweet_df = calc_abnormal_ret(data_df, tweet_df, window, event_count, specs, recog, tweet_filename)
     
     #get market cap for each day from coingecko api:
-    specs_cg = configs['specs_coingecko']
-    tweet_df = get_mcap(tweet_df, specs_cg)
+    #COINGECKO API BROKEN NOW RIP
+    #specs_cg = configs['specs_coingecko']
+    #tweet_df = get_mcap(tweet_df, specs_cg)
+    tweet_df['Market_Cap'] = pd.read_csv('Market_Cap.csv')
     
     #regressions
-    regression(tweet_df, months)
+    tweet_df = regression(tweet_df, months, df, window)
     
     #to excel
     filename_out = configs['output']['filename']
