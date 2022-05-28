@@ -20,6 +20,8 @@ Return = Event_Dummy + Return_1 + Event_Dummy*Return1
 ```
 - Outputs an excel file that holds all data and calculation results.
 - All inputs are changeable in config.json.
+- Runs many regression and plots changing coefficients and p-values
+- Plots Descriptive statistics about data
 - More sophisticated econometric analysis in the R-studio file but very messy as of now (oops)
 - Before running you have to install all packages, which you can do with:
 
