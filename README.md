@@ -8,6 +8,7 @@ This was a project made by Nathan Hall for ECMT3150 at USYD.
 - Retrieves one-minute data from Binance API within a window of time around Elon Musks's tweets about Dogecoin (Feeds into FTX if there is missing data). 
 - Calculates abnormal return, cumulative abnormal return, average abnormal return and cumulative average abnormal reuturn of the data. Also runs a Wilcoxon signed rank test on each minute since the tweet.
 - Also takes the market cap of each day of the event from coingecko API.
+- NOTE: Coingecko API is currently broken so Market Cap is just taken from a csv file.
 - Runs multiple cross-section regression on every minute CAR from the tweet to 60 minutes after with the model:
 
 ```markdown
